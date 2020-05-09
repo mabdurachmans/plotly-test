@@ -3,7 +3,7 @@ This is my plotly learning repository. At first I just wanted to plot choropleth
 
 To run the `app.py` you need to install dash in your environtment and create the [mapbox token](https://account.mapbox.com/access-tokens/), then put the `.mapbox_token` file in the same directory. To run the file, simply type `pyhton app.py` in your terminal.
 
-For those who want to push the `app.py` file to heroku, to create the `Procfile` and `requirements.txt` files. I mostly follow the guide on [plotly page](https://dash.plotly.com/deployment) except for the `requirements.txt` file. I aslo found the [Heroku Getting Started page](https://devcenter.heroku.com/articles/getting-started-with-python) is useful.
+For those who want to push the `app.py` file to heroku, you need to create the `Procfile` and `requirements.txt` files. I mostly follow the guide on [plotly page](https://dash.plotly.com/deployment) except for the `requirements.txt` file. I aslo found the [Heroku Getting Started page](https://devcenter.heroku.com/articles/getting-started-with-python) is useful.
 
 Lastly, check out these two amazing documentations on plotly-dash:
 1. [New York recycling center.](https://github.com/Coding-with-Adam/Dash-by-Plotly/blob/master/Dash_Interactive_Graphs/Scatter_mapbox/recycling.py)
