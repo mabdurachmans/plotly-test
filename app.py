@@ -12,11 +12,9 @@ import json
 import requests
 
 
-
 app = dash.Dash(__name__, external_stylesheets=['https://codepen.io/chriddyp/pen/bWLwgP.css'])
 app.title = 'Covid19 Jawa Barat'
 server = app.server
-
 
 blackbold={'color':'black', 'font-weight': 'bold'}
 
@@ -24,18 +22,17 @@ blackbold={'color':'black', 'font-weight': 'bold'}
 url = 'https://covid19-public.digitalservice.id/api/v1/sebaran/jabar'
 res = requests.get(url)
 df_map = pd.DataFrame(res.json()['data']['content'])
-# df_map = pd.read_csv("jabar.csv")
 
-token = open(".mapbox_token").read()
+token = open(".mapbox_token").read() #insert your own mapbox token in .mapbox_token file
 
-
+#clean the data, make more consistent spelling
 df_map['nama_kab']=df_map['nama_kab'].str.title()
 df_map['nama_kab']=df_map['nama_kab'].str.replace('Kab.','Kabupaten', regex=False)
 df_map['nama_kab']=df_map['nama_kab'].str.replace('Bandung Barat','Bandung', regex=False)
 df_map['nama_kec']=df_map['nama_kec'].str.title()
 df_map['nama_kel']=df_map['nama_kel'].str.title()
 df_map['color'] = df_map['status'].replace({'ODP': 'lightsalmon', 'OTG': 'blue', 'PDP': 'purple', 'Positif': 'indianred'})
-# df_map.to_csv('df_map.csv')
+
 
 app.layout = html.Div(
     html.Div([
@@ -72,7 +69,7 @@ app.layout = html.Div(
                             options=[{'label':str(b),'value':b} for b in sorted(df_map['status'].unique())],
                             value=[],#[b for b in sorted(df_map['status'].unique())],
                             placeholder="Pilih Status",
-                            multi=True,
+                            # multi=True,
                     ),
 
 #source link    
@@ -102,7 +99,7 @@ app.layout = html.Div(
 
 def update_figure(chosen_kab,chosen_status):
     df_sub = df_map[(df_map['nama_kab'].isin(chosen_kab)) &
-                (df_map['status'].isin(chosen_status))]
+                (df_map['status'].isin([chosen_status]))]
 
     # Create figure
     locations=[go.Scattermapbox(
@@ -151,76 +148,75 @@ def update_figure(chosen_kab,chosen_status):
     Input("drop-down_status", "value")])
 def display_click_data(clickData,chosen_status):
     if clickData is None:
-        df_drop = df_map[(df_map['status'].isin(chosen_status))]
+        df_drop = df_map[(df_map['status'].isin([chosen_status]))]
+
+        # cleaning the 'umur' (age) parameter
+        umur_na = pd.to_numeric(df_drop['umur']).dropna()
+        umur_na.replace('\.', '', regex=True).astype('int64')
+        umur_framed = umur_na.to_frame()
+        umur_range = umur_framed.loc[(umur_framed['umur'] < 100) & (umur_framed['umur'] > 0)]
+        umur_cleaned = umur_range.groupby(['umur']).size()
+        umur_sorted = np.sort(umur_range['umur'].astype('int64').unique())
+
         layout = go.Layout(
-            bargap=0.5,
-            # bargroupgap=0.15,
-            barmode='stack',
-            # margin=Margin(l=50, r=10, t=0, b=100),
-            showlegend=False,
-            # height=250,
+            title='Sebaran Covid19 Berdasarkan Usia di Jawa Barat',
             xaxis=dict(
                 showgrid=False,
-                # nticks=50,
-                # fixedrange=False,
-                tickangle=-45,
+                title='Usia',
                 categoryorder='category ascending'
             ),
             yaxis=dict(
-                showticklabels=False,
                 showgrid=False,
-                # fixedrange=False,
+                title='Jumlah Kasus',
                 rangemode='nonnegative',
-                # zeroline='hidden'
             )
         )
 
         data = go.Bar(
-                 x=df_drop['nama_kab'],
-                 y=df_drop['status'],
-                 # marker = {'color': color_scale(df_click)},
-                 hovertext=df_drop['nama_kec'],
+                 x=umur_sorted,
+                 y=umur_cleaned,
+                 hovertext='Jawa Barat',
                  marker_color = df_drop['color'],
              )
         return go.Figure(data=data, layout=layout)
+    
     else:
         # print(clickData)
         clickkecamatan = clickData['points'][0]['hovertext']
         clickkabupaten = df_map[df_map['nama_kec']==clickkecamatan]['nama_kab'].iloc[0]
         df_click = df_map[df_map['nama_kab'].isin([clickkabupaten]) &
-                         (df_map['status'].isin(chosen_status))]
+                         (df_map['status'].isin([chosen_status]))]
+
+        # cleaning the 'umur' (age) parameter
+        umur_na = pd.to_numeric(df_click['umur']).dropna()
+        umur_na.replace('\.', '', regex=True).astype('int64')
+        umur_framed = umur_na.to_frame()
+        umur_range = umur_framed.loc[(umur_framed['umur'] < 100) & (umur_framed['umur'] > 0)]
+        umur_cleaned = umur_range.groupby(['umur']).size()
+        umur_sorted = np.sort(umur_range['umur'].astype('int64').unique())
+
         # print(clickkabupaten)
         layout = go.Layout(
-            bargap=0.5,
-            # bargroupgap=0.15,
-            barmode='stack',
-            # margin=Margin(l=50, r=10, t=0, b=100),
-            showlegend=False,
-            # height=250,
-            # dragmode="select",
+            title='Sebaran Covid19 Berdasarkan Usia Per Kota/Kabupaten' ,
             xaxis=dict(
                 showgrid=False,
-                # nticks=50,
-                # fixedrange=False,
-                tickangle=-45,
+                title='Usia',
                 categoryorder='category ascending'
             ),
             yaxis=dict(
-                showticklabels=False,
                 showgrid=False,
-                # fixedrange=False,
+                title='Jumlah Kasus',
                 rangemode='nonnegative',
-                # zeroline='hidden'
             )
         )
 
         data = go.Bar(
-                 x=df_click['nama_kec'],
-                 y=df_click['status'],
-                 hovertext=df_click['nama_kel'],
+                 x=umur_sorted,
+                 y=umur_cleaned,
+                 hovertext=df_click['nama_kab'],
                  marker_color = df_click['color'],
              )
-    return go.Figure(data=data, layout=layout)
+        return go.Figure(data=data, layout=layout)
 
 #---------------------------------------------------------------
 
